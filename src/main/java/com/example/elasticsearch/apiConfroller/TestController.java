@@ -1,15 +1,15 @@
 package com.example.elasticsearch.apiConfroller;
 
 import com.example.elasticsearch.domain.Person;
-import jdk.nashorn.internal.objects.annotations.Getter;
+import com.example.elasticsearch.service.PersonService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.data.elasticsearch.core.mapping.IndexCoordinates;
-import org.springframework.data.elasticsearch.core.query.GetQuery;
 import org.springframework.data.elasticsearch.core.query.IndexQuery;
 import org.springframework.data.elasticsearch.core.query.IndexQueryBuilder;
 import org.springframework.stereotype.Component;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
@@ -20,9 +20,11 @@ import javax.ws.rs.core.Response;
 public class TestController {
 
     private ElasticsearchOperations elasticsearchOperations;
+    private PersonService personService;
 
-    public TestController(ElasticsearchOperations elasticsearchOperations){
+    public TestController(ElasticsearchOperations elasticsearchOperations, PersonService personService) {
         this.elasticsearchOperations = elasticsearchOperations;
+        this.personService = personService;
     }
 
     @POST
@@ -43,9 +45,20 @@ public class TestController {
     @GET
     @Path("/person/{id}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Person findById(@PathParam("id") String id){
+    public Person findById(@PathParam("id") String id) {
         Person person = elasticsearchOperations.get(id, Person.class);
         return person;
+    }
+
+    @GET
+    @Path("/person")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response findByName(@QueryParam("name") String name, @QueryParam("age") int age) {
+        if (age != 0) {
+            return Response.ok(personService.findByNameAndAge(name, age)).build();
+        }
+
+        return Response.ok(personService.findPersonByName(name, PageRequest.of(0, 10))).build();
     }
 
 }
